@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# My Attendance App
 
-## Getting Started
+**My Attendance App** هو تطبيق واجهة أمامية مخصص لإدارة وتتبع حضور المستخدمين، مصمم باستخدام Next.js و Tailwind CSS، ويعمل بتناغم مع خادم محلي لضمان أن المستخدمين يمكنهم تسجيل الحضور فقط عند وجودهم ضمن نطاق الشبكة المحلية أو المحيط الذي يرتبط به الخادم.
 
-First, run the development server:
+---
+## الميزات الرئيسية
+
+- **إدارة الحضور:**
+  - تسجيل الدخول (Check-In) وتسجيل الانصراف (Check-Out) بواجهة مستخدم بسيطة.
+  - عرض الجداول الخاصة بسجلات الحضور بتصميم متجاوب ومنظم.
+
+- **إدارة المستخدمين:**
+  - تسجيل الدخول باستخدام بيانات مخصصة (اسم المستخدم، الكود، كلمة المرور).
+  - تسجيل المستخدمين الجدد والتحقق من صحة المدخلات.
+
+- **تصميم متقدم:**
+  - استخدام Tailwind CSS لتصميم واجهات متجاوبة وأنيقة.
+  - دعم خطوط Google المخصصة لواجهة مستخدم جذابة.
+
+- **أمان الجلسات:**
+  - استخدام `localStorage` و`cookies` لتخزين وإدارة بيانات الجلسات.
+
+---
+
+## الهيكلية
+
+
+my-attendance-app/ ├── public/ ├── src/ │ ├── app/ │ │ ├── Administration/ │ │ │ └── page.js │ │ ├── AttendanceTable/ │ │ │ └── page.js │ │ ├── login_signin/ │ │ │ └── page.js │ │ └── layout.tsx │ │ └── page.tsx │ ├── componant/ │ │ ├── Administration.js │ │ ├── AttendanceTable.js │ │ ├── button.js │ │ ├── login.js │ │ ├── sinUp.js ├── globals.css ├── package.json ├── tailwind.config.ts
+
+
+---
+
+## المتطلبات
+
+- Node.js (الإصدار 16 أو أحدث).
+- متصفح يدعم JavaScript.
+
+---
+
+## التثبيت والاستخدام
+
+1. **نسخ المستودع:**
+   ```bash
+   git clone https://github.com/RAMADAN-MAHDY/my-attendance-app.git
+   cd my-attendance-app
+## طريقة التشغيل
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## الحزم المستخدمة
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+### الحزم الأساسية:
+- **Next.js**: لإدارة الصفحات وتطوير الواجهات.
+- **React**: لإنشاء المكونات التفاعلية.
+- **Tailwind CSS**: لتصميم واجهات متجاوبة وأنيقة.
+- **date-fns**: لمعالجة التواريخ بسهولة.
+- **cookie**: لإدارة الكوكيز وتخزين بيانات الجلسات.
 
-## Learn More
+### حزم التطوير:
+- **TypeScript**: لدعم الأنواع الثابتة وتحسين الكفاءة.
+- **PostCSS**: لمعالجة الأنماط وتحسين الأداء.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## الاستخدام
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### تسجيل الدخول:
+1. افتح التطبيق وانتقل إلى واجهة تسجيل الدخول.
+2. أدخل الكود وكلمة المرور.
+3. سيتم حفظ بيانات الجلسة في `localStorage` لاستخدامها لاحقًا.
 
-## Deploy on Vercel
+### تسجيل مستخدم جديد:
+1. انتقل إلى واجهة تسجيل المستخدمين.
+2. أدخل البيانات المطلوبة (الاسم، الكود، كلمة المرور، وتأكيد كلمة المرور).
+3. تحقق من تطابق البيانات ثم قم بتسجيل الحساب.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
