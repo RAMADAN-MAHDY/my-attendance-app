@@ -14,17 +14,17 @@ import {
 // Menu items.
 const items = [
   {
-    title: "Home",
+    title: "الرئيسية",
     url: "/",
     icon: Home,
   },
   {
-    title: "AttendanceTable",
+    title: "سجل الحضور", 
     url: "AttendanceTable",
     icon: Inbox,
   },
   {
-    title: "Administration",
+    title: "إدارة الحضور",
     url: "Administration",
     icon: Calendar,
   },
