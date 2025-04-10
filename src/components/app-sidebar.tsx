@@ -24,7 +24,7 @@ const items = [
     icon: Inbox,
   },
   {
-    title: "إدارة الحضور",
+    title: "إدارة الحضور (الاداره)",
     url: "Administration",
     icon: Calendar,
   },
