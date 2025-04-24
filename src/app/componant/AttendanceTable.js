@@ -9,6 +9,7 @@ const AttendanceTable = ({ userId }) => {
   const [loading, setLoading] = useState(true);  // حالة التحميل
   const [currentUrl, setCurrentUrl] = useState("");  // المسار الحالي يبدأ فارغًا
 
+
   // جلب السجلات
   const fetchRecords = async (id) => {
     if (!id) return;

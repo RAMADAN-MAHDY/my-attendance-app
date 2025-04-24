@@ -1,45 +1,156 @@
 "use client"
-import { useState } from "react";
+import { useState , useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import AttendanceTable from '@/app/componant/AttendanceTable'
-
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 const UserTable = ({ users, loading }) => {
-
-  const [showUserTable, setShowUserTable] = useState(false);
-  const [userDetails, setUserDetails] = useState({
+  // حالات الــ state لتخزين البيانات والفلترة
+  const [loadingStatuse, setLoading] = useState(true); // حالة التحميل
+  const [AttendancStatus, setAttendancStatus] = useState(); // حالة الحضور اليوم
+  const [showUserTable, setShowUserTable] = useState(false); // عرض تفاصيل المستخدم
+  const [userDetails, setUserDetails] = useState({ // تفاصيل المستخدم المحدد
     userId: null,
     userName: null,
     userCode: null,
   });
+  const [searchText, setSearchText] = useState("");  // حالة النص في مربع البحث
+  const [filteredUsers, setFilteredUsers] = useState(users);  // المستخدمين بعد الفلترة
 
+  // جلب حالة الحضور عند تحميل الصفحة
+  useEffect(() => {   
+    const fetchAttendanceStatus = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/router_IsUserPresentToday`);
+        const data = await response.json();
+        console.log(data);
+        setAttendancStatus(data);
+      } catch (error) {
+        console.error('Error fetching attendance records:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAttendanceStatus(); // جلب حالة الحضور
+  }, []); 
+
+  // دالة لعرض تفاصيل المستخدم عند الضغط على "عرض"
   const handleAdminClick = (userId, userName, userCode) => {
     setUserDetails({ userId, userName, userCode });
-    setShowUserTable(true);
+    setShowUserTable(true); // عرض السجل
   }
+
+  // دالة لتحويل النص إلى صيغة موحدة للتصفية
+  const normalizeText = (text) => {
+    return String(text).toLowerCase().normalize("NFKD"); // تحويل النص إلى الحروف الصغيرة وإزالة الحروف المركبة
+  };
+
+  // دالة للحصول على حالة الحضور للمستخدم
+  const getAttendanceStatus = (userId) => {
+    if (AttendancStatus) {
+      const userAttendance = AttendancStatus.usersWithAttendance.find(item => item.userId === userId);
+      return userAttendance ? "✅" : "❌"; // إظهار ✅ للحاضرين و ❌ للغائبين
+    }
+    return ""; // في حال لم تكن هناك بيانات
+  }
+
+  // دالة للبحث عن المستخدمين بناءً على النص المدخل
+  const handleSearch = (searchText) => {
+    const normalizedSearchText = normalizeText(searchText); // تطبيع النص المدخل
+
+    // تصفية المستخدمين بناءً على النص المدخل (الاسم، الكود، أو حالة الحضور)
+    const filtered = users.filter(user => {
+      const userName = normalizeText(user.names); // تطبيع الاسم
+      const userCode = normalizeText(user.code); // تطبيع الكود
+      const attendanceStatus = getAttendanceStatus(user._id); // الحصول على حالة الحضور
+
+      return (
+        userName.includes(normalizedSearchText) || // التحقق من مطابقة الاسم
+        userCode.includes(normalizedSearchText) || // التحقق من مطابقة الكود
+        attendanceStatus.includes(normalizedSearchText) // التحقق من مطابقة حالة الحضور
+      );
+    });
+
+    setFilteredUsers(filtered); // تحديث المستخدمين المعروضين
+  };
+
+  // دالة لفلترة المستخدمين الحاضرين فقط عند الضغط على الزر
+  const filterPresentUsers = () => {
+    const presentUsers = users.filter(user => getAttendanceStatus(user._id) === "✅"); // تصفية الحاضرين فقط
+    setFilteredUsers(presentUsers); // تحديث المستخدمين المعروضين ليكونوا فقط الحاضرين
+  };
+
+  // دالة لعرض جميع المستخدمين بعد الضغط على زر "عرض الكل"
+  const showAllUsers = () => {
+    setFilteredUsers(users); // عرض جميع المستخدمين
+  };
 
   return (
     <div className="overflow-x-auto w-full p-4">
+      {/* عرض التاريخ الحالي */}
+
+      {/* قسم البحث مع الأزرار */}
+      <div className="flex items-center mb-4">
+        {/* مربع البحث */}
+        <input
+          type="text"
+          placeholder="ابحث بالاسم أو الكود  "
+          value={searchText}
+          onChange={(e) => {
+            setSearchText(e.target.value); // تحديث النص في مربع البحث
+            handleSearch(e.target.value); // تنفيذ عملية البحث
+          }}
+          className="border rounded-l-md p-2"
+        />
+        {/* زر الحاضرين فقط */}
+        <button
+          onClick={filterPresentUsers}
+          className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600"
+        >
+          الحاضرين فقط
+        </button>
+        {/* زر عرض الكل */}
+        <button
+          onClick={showAllUsers}
+          className="bg-gray-500 text-white p-2 ml-2 rounded-r-md hover:bg-gray-600"
+        >
+          عرض الكل
+        </button>
+
+        <h2 className="text-center p-2 ml-2 font-bold">
+  {format(new Date(), " EEEE , dd/ MM / yyyy", { locale: ar })}
+</h2>
+      </div>
+
+      {/* جدول المستخدمين */}
       <Table className="w-full border rounded-xl shadow-md">
         <TableHeader>
+          {/* رأس الجدول */}
           <TableRow className="bg-gray-100 text-gray-700">
             <TableHead>#</TableHead>
             <TableHead>الاسم</TableHead>
+            <TableHead>الموبايل</TableHead>
+            <TableHead>حضور اليوم</TableHead>
             <TableHead>الكود</TableHead>
             <TableHead>عرض</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
+          {/* في حالة التحميل */}
           {loading ? (
             <TableRow>
-              <TableCell colSpan={4} className="text-center py-4 text-gray-500">
+              <TableCell colSpan={5} className="text-center py-4 text-gray-500">
                 جاري التحميل...
               </TableCell>
             </TableRow>
-          ) : users.length > 0 ? (
-            users.map((user, index) => (
+          ) : filteredUsers.length > 0 ? (
+            // عرض المستخدمين بعد الفلترة
+            filteredUsers.map((user, index) => (
               <TableRow key={user._id} className="border-b hover:bg-gray-100">
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>{user.names}</TableCell>
+                <TableCell>0{user.phone}</TableCell>
+                <TableCell>{ loadingStatuse ?     "..."       :  getAttendanceStatus(user._id)     }</TableCell> {/* عرض حالة الحضور */}
                 <TableCell>{user.code}</TableCell>
                 <TableCell className="bg-[#2092f0a9] rounded-3xl hover:bg-[#ffffffa9] cursor-pointer w-11">
                   <button className="w-full h-full" onClick={() => handleAdminClick(user._id, user.names, user.code)}>
@@ -49,8 +160,9 @@ const UserTable = ({ users, loading }) => {
               </TableRow>
             ))
           ) : (
+            // في حال لا توجد بيانات
             <TableRow>
-              <TableCell colSpan={4} className="text-center py-4 text-gray-500">
+              <TableCell colSpan={5} className="text-center py-4 text-gray-500">
                 لا توجد بيانات
               </TableCell>
             </TableRow>
@@ -58,14 +170,17 @@ const UserTable = ({ users, loading }) => {
         </TableBody>
       </Table>
 
+      {/* عرض السجل عندما يتم الضغط على "عرض" */}
       {showUserTable && (
         <section className="fixed justify-center top-[70px] bottom-0 right-0 left-0 bg-[#fff]">
-          <span className="absolute top-2 right-5 text-[#ff2d2d] font-bold cursor-pointer" onClick={() => {
+          {/* زر لإغلاق السجل */}
+          <span className="absolute top-2 right-5 text-[#ff2d2d] p-2 rounded-full bg-[#eaff2e] font-bold cursor-pointer" onClick={() => {
             setShowUserTable(false);
-            setUserDetails({ userId: null, userName: null, userCode: null });
+            setUserDetails({ userId: null, userName: null, userCode: null }); // إعادة تعيين تفاصيل المستخدم
           }}>X</span>
-          <h1 className="text-center text-[#91914c] text-2xl">السجل</h1>
 
+          {/* عرض الكود والاسم */}
+          <h1 className="text-center text-[#91914c] text-2xl">السجل</h1>
           <div>
             <h1 className="text-center text-black text-2xl">{userDetails.userCode}: الكود</h1>
             <h1 className="text-center text-black text-2xl" style={{ direction: "ltr" }}>
@@ -73,6 +188,7 @@ const UserTable = ({ users, loading }) => {
             </h1>
           </div>
 
+          {/* عرض تفاصيل الحضور الخاصة بالمستخدم */}
           <AttendanceTable userId={userDetails.userId} />
         </section>
       )}
