@@ -1,9 +1,9 @@
+
 import UserTable from '../componant/Administration.js';
 
 const Administration = async () => {
   let getUser = [];
   let loading = true;
-
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/getUser`, {
       cache: 'no-store', // لضمان أن البيانات تُجلب في كل طلب (SSR)
@@ -18,7 +18,9 @@ const Administration = async () => {
     loading = false;
   } 
 
+
   return (
+    
     <>
       <h1 className='font-bold ml-[30%]'> بسم الله الرحمن الرحيم</h1>
       <UserTable users={getUser} loading={loading} />

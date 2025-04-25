@@ -1,33 +1,28 @@
 "use client"
-import { useState , useEffect } from "react";
+
+import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import AttendanceTable from '@/app/componant/AttendanceTable'
+import AttendanceTable from '@/app/componant/AttendanceTable';
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+
 const UserTable = ({ users, loading }) => {
+  const [adminPass, setAdminPass] = useState(0);
+  const [refreshFlag, setrefreshFlag] = useState(true);
+  const [loadingStatuse, setLoading] = useState(true);
+  const [AttendancStatus, setAttendancStatus] = useState();
+  const [showUserTable, setShowUserTable] = useState(false);
+  const [userDetails, setUserDetails] = useState({ userId: null, userName: null, userCode: null });
+  const [searchText, setSearchText] = useState("");
+  const [filteredUsers, setFilteredUsers] = useState(users);
+//   const [sortOrder, setSortOrder] = useState();
 
-
-  // حالات الــ state لتخزين البيانات والفلترة
-  const [message, setMessage] = useState(true);
-  const [loadingStatuse, setLoading] = useState(true); // حالة التحميل
-  const [AttendancStatus, setAttendancStatus] = useState(); // حالة الحضور اليوم
-  const [showUserTable, setShowUserTable] = useState(false); // عرض تفاصيل المستخدم
-  const [userDetails, setUserDetails] = useState({ // تفاصيل المستخدم المحدد
-    userId: null,
-    userName: null,
-    userCode: null,
-  });
-  const [searchText, setSearchText] = useState("");  // حالة النص في مربع البحث
-  const [filteredUsers, setFilteredUsers] = useState(users);  // المستخدمين بعد الفلترة
-        console.log(message);
-
-  // جلب حالة الحضور عند تحميل الصفحة
-  useEffect(() => {   
+  // جلب الحضور
+  useEffect(() => {
     const fetchAttendanceStatus = async () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/router_IsUserPresentToday`);
         const data = await response.json();
-        // console.log(data);
         setAttendancStatus(data);
       } catch (error) {
         console.error('Error fetching attendance records:', error);
@@ -35,211 +30,166 @@ const UserTable = ({ users, loading }) => {
         setLoading(false);
       }
     };
-    fetchAttendanceStatus(); // جلب حالة الحضور
-  }, [message]); 
+    fetchAttendanceStatus();
+  }, [refreshFlag]);
 
-
-  // تسجيل الدخول والخروج بواسطة الادمن (الاداره )
-
+  // تسجيل حضور
   const handle_checkIn = async (id) => {
-    // if (!id) {
-    //   setMessage("يرجى تسجيل الدخول أولًا");
-    //   return;
-    // }
-    // setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/checkIn/${id}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/checkIn/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
-      const data = await response.json();
-      setMessage(!message);
+      setrefreshFlag(!refreshFlag);
     } catch (error) {
-      setMessage("خطأ في تسجيل الحضور");
-    } finally {
-    //   setIsLoading(false);
+      console.error("خطأ في تسجيل الحضور", error);
     }
   };
 
-  const handle_checkOut = async () => {
-    // setIsLoading(true);
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/checkOut/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await response.json();
-    //   setMessage(data);
-    } catch (error) {
-      setMessage("خطأ في تسجيل الانصراف");
-    } finally {
-    //   setIsLoading(false);
-    }
-  };
-
-
-
-  // دالة لعرض تفاصيل المستخدم عند الضغط على "عرض"
   const handleAdminClick = (userId, userName, userCode) => {
     setUserDetails({ userId, userName, userCode });
-    setShowUserTable(true); // عرض السجل
-  }
-
-  // دالة لتحويل النص إلى صيغة موحدة للتصفية
-  const normalizeText = (text) => {
-    return String(text).toLowerCase().normalize("NFKD"); // تحويل النص إلى الحروف الصغيرة وإزالة الحروف المركبة
+    setShowUserTable(true);
   };
 
-  // دالة للحصول على حالة الحضور للمستخدم
+  const normalizeText = (text) => String(text).toLowerCase().normalize("NFKD");
+
   const getAttendanceStatus = (userId) => {
     if (AttendancStatus) {
       const userAttendance = AttendancStatus.usersWithAttendance.find(item => item.userId === userId);
-      return userAttendance ? "✅" : "❌"; // إظهار ✅ للحاضرين و ❌ للغائبين
+      return userAttendance ? "✅" : "❌";
     }
-    return ""; // في حال لم تكن هناك بيانات
-  }
-
-  // دالة للبحث عن المستخدمين بناءً على النص المدخل
+    return "";
+  };
+// البحث
   const handleSearch = (searchText) => {
-    const normalizedSearchText = normalizeText(searchText); // تطبيع النص المدخل
-
-    // تصفية المستخدمين بناءً على النص المدخل (الاسم، الكود، أو حالة الحضور)
+    const normalizedSearchText = normalizeText(searchText);
     const filtered = users.filter(user => {
-      const userName = normalizeText(user.names); // تطبيع الاسم
-      const userCode = normalizeText(user.code); // تطبيع الكود
-      const attendanceStatus = getAttendanceStatus(user._id); // الحصول على حالة الحضور
-
+      const userName = normalizeText(user.names);
+      const userCode = normalizeText(user.code);
+      const attendanceStatus = getAttendanceStatus(user._id);
       return (
-        userName.includes(normalizedSearchText) || // التحقق من مطابقة الاسم
-        userCode.includes(normalizedSearchText) || // التحقق من مطابقة الكود
-        attendanceStatus.includes(normalizedSearchText) // التحقق من مطابقة حالة الحضور
+        userName.includes(normalizedSearchText) ||
+        userCode.includes(normalizedSearchText) ||
+        attendanceStatus.includes(normalizedSearchText)
       );
     });
-
-    setFilteredUsers(filtered); // تحديث المستخدمين المعروضين
+    setFilteredUsers(filtered);
   };
 
-  // دالة لفلترة المستخدمين الحاضرين فقط عند الضغط على الزر
   const filterPresentUsers = () => {
-    const presentUsers = users.filter(user => getAttendanceStatus(user._id) === "✅"); // تصفية الحاضرين فقط
-    setFilteredUsers(presentUsers); // تحديث المستخدمين المعروضين ليكونوا فقط الحاضرين
+    const presentUsers = users.filter(user => getAttendanceStatus(user._id) === "✅");
+    setFilteredUsers(presentUsers);
   };
 
-  // دالة لعرض جميع المستخدمين بعد الضغط على زر "عرض الكل"
-  const showAllUsers = () => {
-    setFilteredUsers(users); // عرض جميع المستخدمين
-  };
+  const showAllUsers = () => setFilteredUsers(users);
+
+  // ترتيب الجدول
+//   const handleSort = (key) => {
+//     let direction = "asc";
+//     if (sortConfig.key === key && sortConfig.direction === "asc") {
+//       direction = "desc";
+//     }
+//     setSortConfig({ key, direction });
+
+//     const sorted = [...filteredUsers].sort((a, b) => {
+//       const aVal = key === 'names' ? a.names : getAttendanceStatus(a._id);
+//       const bVal = key === 'names' ? b.names : getAttendanceStatus(b._id);
+//       return direction === "asc"
+//         ? String(aVal).localeCompare(String(bVal))
+//         : String(bVal).localeCompare(String(aVal));
+//     });
+
+//     setFilteredUsers(sorted);
+//   };
+// const handleSort = (field) => {
+//     const sorted = [...filteredUsers].sort((a, b) => {
+//       const aVal = a[field]?.toString() || "";
+//       const bVal = b[field]?.toString() || "";
+  
+//       return sortOrder === "asc"
+//         ? aVal.localeCompare(bVal, ["ar", "en"], { sensitivity: "base" })
+//         : bVal.localeCompare(aVal, ["ar", "en"], { sensitivity: "base" });
+//     });
+  
+//     setFilteredUsers(sorted);
+//     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+//   };
+  
+  if (process.env.NEXT_PUBLIC_Pass_admin !== adminPass) {
+    return (
+      <div className="text-center mt-[30%] m-6 sm:ml-[30%] py-4 sm:w-[40%] flex-col justify-start items-center text-gray-500 bg-[#d7da8ea6] rounded-3xl">
+        <h2>دخول بصلاحية الادمن (الادارة)</h2>
+        <h2>يرجى إدخال كلمة المرور الصحيحة</h2>
+        <input type="number" onChange={(e) => setAdminPass(e.target.value)} className='border-[#29ff94] bg-[#f5f7f5] text-[#000] pl-3' />
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-x-auto w-full p-4">
-      {/* عرض التاريخ الحالي */}
-
-      {/* قسم البحث مع الأزرار */}
+      {/* شريط البحث والأزرار */}
       <div className="flex items-center mb-4">
-        {/* مربع البحث */}
-        <input
-          type="text"
-          placeholder="ابحث بالاسم أو الكود  "
-          value={searchText}
-          onChange={(e) => {
-            setSearchText(e.target.value); // تحديث النص في مربع البحث
-            handleSearch(e.target.value); // تنفيذ عملية البحث
-          }}
-          className="border rounded-l-md p-2"
-        />
-        {/* زر الحاضرين فقط */}
-        <button
-          onClick={filterPresentUsers}
-          className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600"
-        >
-          الحاضرين فقط
-        </button>
-        {/* زر عرض الكل */}
-        <button
-          onClick={showAllUsers}
-          className="bg-gray-500 text-white p-2 ml-2 rounded-r-md hover:bg-gray-600"
-        >
-          عرض الكل
-        </button>
-
-        <h2 className="text-center p-2 ml-2 font-bold">
-  {format(new Date(), " EEEE , dd/ MM / yyyy", { locale: ar })}
-</h2>
+        <input type="text" placeholder="ابحث بالاسم أو الكود" value={searchText} onChange={(e) => {
+          setSearchText(e.target.value);
+          handleSearch(e.target.value);
+        }} className="border rounded-l-md p-2" />
+        <button onClick={filterPresentUsers} className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600">الحاضرين فقط</button>
+        <button onClick={showAllUsers} className="bg-gray-500 text-white p-2 ml-2 rounded-r-md hover:bg-gray-600">عرض الكل</button>
+        <h2 className="text-center p-2 ml-2 font-bold">{format(new Date(), "EEEE , dd/ MM / yyyy", { locale: ar })}</h2>
       </div>
 
-      {/* جدول المستخدمين */}
+      {/* الجدول */}
       <Table className="w-full border rounded-xl shadow-md">
         <TableHeader>
-          {/* رأس الجدول */}
           <TableRow className="bg-gray-100 text-gray-700">
             <TableHead>#</TableHead>
-            <TableHead>الاسم</TableHead>
+            <TableHead >الاسم</TableHead>
             <TableHead>الموبايل</TableHead>
-            <TableHead>حضور اليوم</TableHead>
+            <TableHead >حضور اليوم</TableHead>
             <TableHead>الكود</TableHead>
             <TableHead>تسجيل حضور</TableHead>
             <TableHead>عرض</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {/* في حالة التحميل */}
           {loading ? (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center py-4 text-gray-500">
-                جاري التحميل...
-              </TableCell>
-            </TableRow>
+            <TableRow><TableCell colSpan={5} className="text-center py-4 text-gray-500">جاري التحميل...</TableCell></TableRow>
           ) : filteredUsers.length > 0 ? (
-            // عرض المستخدمين بعد الفلترة
             filteredUsers.map((user, index) => (
               <TableRow key={user._id} className="border-b hover:bg-gray-100">
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>{user.names}</TableCell>
                 <TableCell>0{user.phone}</TableCell>
-                <TableCell>{ loadingStatuse ?     "..."       :  getAttendanceStatus(user._id)     }</TableCell> {/* عرض حالة الحضور */}
+                <TableCell>{loadingStatuse ? "..." : getAttendanceStatus(user._id)}</TableCell>
                 <TableCell>{user.code}</TableCell>
                 <TableCell className="bg-[#5bf020a9] rounded-3xl hover:bg-[#ffffffa9] cursor-pointer w-11">
-                  <button className="w-full h-full" onClick={() => handle_checkIn(user._id)}>
-                    حضر
-                  </button>
+                  <button className="w-full h-full" onClick={() => handle_checkIn(user._id)}>حضر</button>
                 </TableCell>
                 <TableCell className="bg-[#2092f0a9] rounded-3xl hover:bg-[#ffffffa9] cursor-pointer w-11">
-                  <button className="w-full h-full" onClick={() => handleAdminClick(user._id, user.names, user.code)}>
-                    السجل
-                  </button>
+                  <button className="w-full h-full" onClick={() => handleAdminClick(user._id, user.names, user.code)}>السجل</button>
                 </TableCell>
               </TableRow>
             ))
           ) : (
-            // في حال لا توجد بيانات
-            <TableRow>
-              <TableCell colSpan={5} className="text-center py-4 text-gray-500">
-                لا توجد بيانات
-              </TableCell>
-            </TableRow>
+            <TableRow><TableCell colSpan={5} className="text-center py-4 text-gray-500">لا توجد بيانات</TableCell></TableRow>
           )}
         </TableBody>
       </Table>
 
-      {/* عرض السجل عندما يتم الضغط على "عرض" */}
+      {/* السجل */}
       {showUserTable && (
         <section className="fixed justify-center top-[70px] bottom-0 right-0 left-0 bg-[#fff]">
-          {/* زر لإغلاق السجل */}
           <span className="absolute top-2 right-5 text-[#ff2d2d] p-2 rounded-full bg-[#eaff2e] font-bold cursor-pointer" onClick={() => {
             setShowUserTable(false);
-            setUserDetails({ userId: null, userName: null, userCode: null }); // إعادة تعيين تفاصيل المستخدم
+            setUserDetails({ userId: null, userName: null, userCode: null });
           }}>X</span>
 
-          {/* عرض الكود والاسم */}
           <h1 className="text-center text-[#91914c] text-2xl">السجل</h1>
           <div>
             <h1 className="text-center text-black text-2xl">{userDetails.userCode}: الكود</h1>
-            <h1 className="text-center text-black text-2xl" style={{ direction: "ltr" }}>
-              <span>   </span>{userDetails.userName} / الاسم
-            </h1>
+            <h1 className="text-center text-black text-2xl" style={{ direction: "ltr" }}>{userDetails.userName} / الاسم</h1>
           </div>
 
-          {/* عرض تفاصيل الحضور الخاصة بالمستخدم */}
           <AttendanceTable userId={userDetails.userId} />
         </section>
       )}
