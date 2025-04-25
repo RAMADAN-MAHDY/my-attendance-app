@@ -5,7 +5,10 @@ import AttendanceTable from '@/app/componant/AttendanceTable'
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 const UserTable = ({ users, loading }) => {
+
+
   // حالات الــ state لتخزين البيانات والفلترة
+  const [message, setMessage] = useState(true);
   const [loadingStatuse, setLoading] = useState(true); // حالة التحميل
   const [AttendancStatus, setAttendancStatus] = useState(); // حالة الحضور اليوم
   const [showUserTable, setShowUserTable] = useState(false); // عرض تفاصيل المستخدم
@@ -16,6 +19,7 @@ const UserTable = ({ users, loading }) => {
   });
   const [searchText, setSearchText] = useState("");  // حالة النص في مربع البحث
   const [filteredUsers, setFilteredUsers] = useState(users);  // المستخدمين بعد الفلترة
+        console.log(message);
 
   // جلب حالة الحضور عند تحميل الصفحة
   useEffect(() => {   
@@ -23,7 +27,7 @@ const UserTable = ({ users, loading }) => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/router_IsUserPresentToday`);
         const data = await response.json();
-        console.log(data);
+        // console.log(data);
         setAttendancStatus(data);
       } catch (error) {
         console.error('Error fetching attendance records:', error);
@@ -32,7 +36,48 @@ const UserTable = ({ users, loading }) => {
       }
     };
     fetchAttendanceStatus(); // جلب حالة الحضور
-  }, []); 
+  }, [message]); 
+
+
+  // تسجيل الدخول والخروج بواسطة الادمن (الاداره )
+
+  const handle_checkIn = async (id) => {
+    // if (!id) {
+    //   setMessage("يرجى تسجيل الدخول أولًا");
+    //   return;
+    // }
+    // setIsLoading(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/checkIn/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+      setMessage(!message);
+    } catch (error) {
+      setMessage("خطأ في تسجيل الحضور");
+    } finally {
+    //   setIsLoading(false);
+    }
+  };
+
+  const handle_checkOut = async () => {
+    // setIsLoading(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/checkOut/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+    //   setMessage(data);
+    } catch (error) {
+      setMessage("خطأ في تسجيل الانصراف");
+    } finally {
+    //   setIsLoading(false);
+    }
+  };
+
+
 
   // دالة لعرض تفاصيل المستخدم عند الضغط على "عرض"
   const handleAdminClick = (userId, userName, userCode) => {
@@ -132,6 +177,7 @@ const UserTable = ({ users, loading }) => {
             <TableHead>الموبايل</TableHead>
             <TableHead>حضور اليوم</TableHead>
             <TableHead>الكود</TableHead>
+            <TableHead>تسجيل حضور</TableHead>
             <TableHead>عرض</TableHead>
           </TableRow>
         </TableHeader>
@@ -152,6 +198,11 @@ const UserTable = ({ users, loading }) => {
                 <TableCell>0{user.phone}</TableCell>
                 <TableCell>{ loadingStatuse ?     "..."       :  getAttendanceStatus(user._id)     }</TableCell> {/* عرض حالة الحضور */}
                 <TableCell>{user.code}</TableCell>
+                <TableCell className="bg-[#5bf020a9] rounded-3xl hover:bg-[#ffffffa9] cursor-pointer w-11">
+                  <button className="w-full h-full" onClick={() => handle_checkIn(user._id)}>
+                    حضر
+                  </button>
+                </TableCell>
                 <TableCell className="bg-[#2092f0a9] rounded-3xl hover:bg-[#ffffffa9] cursor-pointer w-11">
                   <button className="w-full h-full" onClick={() => handleAdminClick(user._id, user.names, user.code)}>
                     السجل
