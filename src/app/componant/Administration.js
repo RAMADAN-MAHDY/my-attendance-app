@@ -128,7 +128,7 @@ const UserTable = ({ users, loading }) => {
   return (
     <div className="overflow-x-auto w-full p-4">
       {/* شريط البحث والأزرار */}
-      <div className="flex items-center mb-4">
+      <div className="flex flex-wrap items-center mb-4">
         <input type="text" placeholder="ابحث بالاسم أو الكود" value={searchText} onChange={(e) => {
           setSearchText(e.target.value);
           handleSearch(e.target.value);
